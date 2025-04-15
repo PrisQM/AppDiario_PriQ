@@ -1,4 +1,4 @@
-package com.priscilla.miappdiario.ui.theme
+package com.priscilla.miappdiario.interfaz.tema
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
