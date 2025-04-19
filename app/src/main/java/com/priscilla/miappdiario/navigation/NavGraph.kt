@@ -7,18 +7,18 @@ import androidx.navigation.compose.composable
 import androidx.navigation.NavController
 import com.priscilla.miappdiario.interfaz.pantallas.LoginScreen
 import com.priscilla.miappdiario.interfaz.pantallas.EntradaScreen
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-
 
 
 @Composable
 fun NavGraph(navController: NavHostController) {
-    NavHost(navController = navController, startDestination = "login") {
-        composable("login") {
+    NavHost(
+        navController = navController,
+        startDestination = AppScreens.Login.route
+    ) {
+        composable(route = AppScreens.Login.route) {
             LoginScreen(navController)
         }
-        composable("entrada") {
+        composable(route = AppScreens.Entrada.route) {
             EntradaScreen(navController)
         }
     }
