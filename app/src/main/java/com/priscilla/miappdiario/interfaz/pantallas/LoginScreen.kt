@@ -16,8 +16,65 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.priscilla.miappdiario.interfaz.tema.MiAppDiarioTheme
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavHostController
+import com.priscilla.miappdiario.navigation.AppScreens
 
 @Composable
+fun LoginScreen(navController: NavHostController) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text("Iniciar Sesión", style = MaterialTheme.typography.headlineSmall)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Correo electrónico") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Contraseña") },
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Button(
+            onClick = {
+                // Solo navegación por ahora
+                navController.navigate(AppScreens.Entrada.route)
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Entrar")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        TextButton(onClick = {
+            navController.navigate(AppScreens.Signin.route)
+        }) {
+            Text("¿No tienes cuenta? Crea una aquí")
+        }
+    }
+}
+
+/*
 fun LoginScreen(navController: NavController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -98,10 +155,4 @@ fun LoginScreen(navController: NavController) {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun LoginScreenPreview() {
-    MiAppDiarioTheme {
-        LoginScreen(navController = rememberNavController())
-    }
-}
+*/
