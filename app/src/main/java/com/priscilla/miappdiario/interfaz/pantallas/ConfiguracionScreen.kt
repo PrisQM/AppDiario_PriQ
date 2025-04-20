@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavHostController
+import com.priscilla.miappdiario.interfaz.componentes.MenuInferior
 
 @Composable
 fun ConfiguracionScreen(navController: NavHostController) {
@@ -65,23 +66,7 @@ fun ConfiguracionScreen(navController: NavHostController) {
             }
         }
 
-        // Menú inferior
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            TextButton(onClick = { navController.navigate("entrada") }) {
-                Text("Entrada")
-            }
-            TextButton(onClick = { navController.navigate("historial") }) {
-                Text("Historial")
-            }
-            TextButton(onClick = { navController.navigate("configuracion") }) {
-                Text("Configuración")
-            }
-        }
+        MenuInferior(navController)
+
     }
 }

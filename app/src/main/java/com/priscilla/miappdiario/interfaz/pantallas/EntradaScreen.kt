@@ -20,6 +20,7 @@ import com.priscilla.miappdiario.model.EstadoAnimo
 import java.time.LocalDate
 import java.time.format.TextStyle as JavaTextStyle
 import java.util.*
+import com.priscilla.miappdiario.interfaz.componentes.MenuInferior
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -113,23 +114,7 @@ fun EntradaScreen(navController: NavHostController) {
 
         Spacer(modifier = Modifier.height(330.dp))
 
-        // Menú inferior de navegación
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            TextButton(onClick = { navController.navigate("entrada") }) {
-                Text("Entrada")
-            }
-            TextButton(onClick = { navController.navigate("historial") }) {
-                Text("Historial")
-            }
-            TextButton(onClick = { navController.navigate("configuracion") }) {
-                Text("Configuración")
-            }
-        }
+        MenuInferior(navController)
+
     }
 }
