@@ -24,10 +24,10 @@ fun NavGraph(navController: NavHostController) {
             SigninScreen(navController)
         }
         composable(route = AppScreens.Historial.route) {
-            HistorialScreen()
+            HistorialScreen(navController)
         }
         composable(route = AppScreens.Configuracion.route) {
-            ConfiguracionScreen()
+            ConfiguracionScreen(navController)
         }
     }
 }

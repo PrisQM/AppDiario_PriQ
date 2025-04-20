@@ -1,89 +1,134 @@
 package com.priscilla.miappdiario.interfaz.pantallas
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import coil.compose.rememberAsyncImagePainter
-import java.text.SimpleDateFormat
+import androidx.navigation.NavHostController
+import com.priscilla.miappdiario.interfaz.tema.ColorBotonPrimario
+import com.priscilla.miappdiario.interfaz.tema.ColorTexto
+import com.priscilla.miappdiario.model.EstadoAnimo
+import java.time.LocalDate
+import java.time.format.TextStyle as JavaTextStyle
 import java.util.*
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun EntradaScreen(navController: NavController) {
-    var pensamiento by remember { mutableStateOf(TextFieldValue("")) }
-    var imageUri by remember { mutableStateOf<Uri?>(null) }
+fun EntradaScreen(navController: NavHostController) {
+    var entradaTexto by remember { mutableStateOf("") }
+    val fecha = LocalDate.now()
+    val diaSemana = fecha.dayOfWeek.getDisplayName(JavaTextStyle.FULL, Locale("es", "ES"))
+    val mes = fecha.month.getDisplayName(JavaTextStyle.FULL, Locale("es", "ES"))
+    val fechaFormateada = "${diaSemana.replaceFirstChar { it.uppercase() }}, ${fecha.dayOfMonth} de ${mes} del ${fecha.year}"
 
-    // Para obtener la fecha de hoy
-    val fechaActual = remember {
-        SimpleDateFormat("EEEE, d 'de' MMMM yyyy", Locale("es", "ES")).format(Date())
-    }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Top
+    ) {
 
-    // Para abrir galería
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        imageUri = uri
-    }
+        Spacer(modifier = Modifier.height(70.dp))
 
-    Scaffold { padding ->
-        Column(
+        //Fecha
+        Text(
+            text = fechaFormateada,
+            style = MaterialTheme.typography.titleLarge,
+            color = ColorTexto
+        )
+
+        Spacer(modifier = Modifier.height(28.dp))
+
+        Text(
+            text = "Escribe sobre tu día...",
+            style = MaterialTheme.typography.bodyLarge,
+            color = ColorTexto
+        )
+
+        Spacer(modifier = Modifier.height(2.dp))
+
+        BasicTextField(
+            value = entradaTexto,
+            onValueChange = { entradaTexto = it },
             modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(24.dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(text = fechaActual, fontSize = 20.sp)
+                .fillMaxWidth()
+                .height(150.dp)
+                .background(Color.White, shape = MaterialTheme.shapes.medium)
+                .padding(12.dp),
+            textStyle = TextStyle(fontSize = 16.sp, color = Color.Black)
+        )
 
-            Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-            OutlinedTextField(
-                value = pensamiento,
-                onValueChange = { pensamiento = it },
-                label = { Text("Escribí tu pensamiento...") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(160.dp)
-            )
+        var estadoSeleccionado by remember { mutableStateOf(EstadoAnimo.obtenerLista().first()) }
+        var expanded by remember { mutableStateOf(false) }
 
-            Spacer(modifier = Modifier.height(16.dp))
+        Text("¿Cómo te sientes hoy?", style = MaterialTheme.typography.bodyMedium)
+        Spacer(modifier = Modifier.height(4.dp))
 
-            Button(onClick = { launcher.launch("image/*") }) {
-                Text("Seleccionar Imagen")
+        Box(modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(onClick = { expanded = true }) {
+                Text(estadoSeleccionado.nombre)
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            val listaEstados = EstadoAnimo.obtenerLista()
 
-            imageUri?.let {
-                Image(
-                    painter = rememberAsyncImagePainter(it),
-                    contentDescription = "Imagen seleccionada",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = {
-                    // Guardar entrada (se implementa más adelante)
-                },
-                modifier = Modifier.fillMaxWidth()
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
             ) {
-                Text("Guardar Entrada")
+                listaEstados.forEach { estado ->
+                    DropdownMenuItem(
+                        text = { Text(estado.nombre) },
+                        onClick = {
+                            estadoSeleccionado = estado
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(40.dp))
+
+        Button(
+            onClick = { /* Acción de guardar */ },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = ColorBotonPrimario)
+        ) {
+            Text("Guardar", color = Color.White)
+        }
+
+        Spacer(modifier = Modifier.height(330.dp))
+
+        // Menú inferior de navegación
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            horizontalArrangement = Arrangement.SpaceAround,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TextButton(onClick = { navController.navigate("entrada") }) {
+                Text("Entrada")
+            }
+            TextButton(onClick = { navController.navigate("historial") }) {
+                Text("Historial")
+            }
+            TextButton(onClick = { navController.navigate("configuracion") }) {
+                Text("Configuración")
             }
         }
     }
