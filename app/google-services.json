@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "741809100031",
-    "project_id": "miappdiario-711ad",
-    "storage_bucket": "miappdiario-711ad.firebasestorage.app"
+    "project_number": "654065238406",
+    "project_id": "miappdiario-8972f",
+    "storage_bucket": "miappdiario-8972f.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:741809100031:android:494b7a2459da45bfb568ca",
+        "mobilesdk_app_id": "1:654065238406:android:9d4cf2bf405e54d0186c07",
         "android_client_info": {
           "package_name": "com.priscilla.miappdiario"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyASLOZj1L8ZAYUzKLa4XhPvO6ER-D6Fw8g"
+          "current_key": "AIzaSyAMmSR6kA6oN-hfuWxokqfwckpgHwLbJXk"
         }
       ],
       "services": {

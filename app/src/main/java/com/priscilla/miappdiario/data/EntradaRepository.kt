@@ -13,17 +13,15 @@ class EntradaRepository {
     // Guarda o sobrescribe una entrada utilizando la fecha como ID del documento
     suspend fun guardarEntrada(entrada: EntradaDiaria) {
         try {
-            val idFecha = entrada.fecha  // Ejemplo: "2025-04-22"
-            val ref = db.collection("entradas").document(idFecha)
-            val entradaConId = entrada
+            val idFecha = entrada.fecha
             db.collection("entradas")
-                .document(entrada.fecha) // se usa la fecha como ID del documento
-                .set(entradaConId)
+                .document(idFecha)
+                .set(entrada)
                 .await()
-            ref.set(entradaConId).await()  // set() sobrescribe si ya existe
-
+            Log.d("GuardarEntrada", "Entrada guardada correctamente: $entrada")
         } catch (e: Exception) {
             e.printStackTrace()
+            Log.e("GuardarEntrada", "Error al guardar entrada: ${e.message}")
         }
     }
 

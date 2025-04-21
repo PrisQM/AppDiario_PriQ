@@ -38,7 +38,7 @@ fun SigninScreen(
             coroutineScope.launch {
                 snackbarHostState.showSnackbar(
                     message = "¡Registro exitoso!",
-                    duration = SnackbarDuration.Short
+                    duration = SnackbarDuration.Long
                 )
             }
             navController.navigate(AppScreens.Entrada.route) {

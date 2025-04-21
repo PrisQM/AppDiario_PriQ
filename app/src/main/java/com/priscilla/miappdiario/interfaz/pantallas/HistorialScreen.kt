@@ -1,6 +1,9 @@
 package com.priscilla.miappdiario.interfaz.pantallas
 
 import android.app.DatePickerDialog
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -15,6 +18,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import com.priscilla.miappdiario.interfaz.componentes.MenuInferior
+import com.priscilla.miappdiario.model.EntradaDiaria
+import com.priscilla.miappdiario.model.EstadoAnimo
 import com.priscilla.miappdiario.viewmodel.EntradaViewModel
 import kotlinx.coroutines.launch
 import java.util.*
@@ -24,32 +29,36 @@ fun HistorialScreen(navController: NavHostController, viewModel: EntradaViewMode
     val context = LocalContext.current
     val calendario = Calendar.getInstance()
 
-    // Se carga una sola vez al iniciar la pantalla
     LaunchedEffect(Unit) {
         viewModel.obtenerEntradas()
     }
 
-    // Fecha seleccionada por el usuario
     var fechaSeleccionada by remember {
         mutableStateOf(
             "${calendario.get(Calendar.YEAR)}-${(calendario.get(Calendar.MONTH) + 1).toString().padStart(2, '0')}-${calendario.get(Calendar.DAY_OF_MONTH).toString().padStart(2, '0')}"
         )
     }
 
-    // Control del diálogo de confirmación
-    var mostrarDialogoConfirmacion by remember { mutableStateOf(false) }
+    var mostrarDialogoEliminar by remember { mutableStateOf(false) }
+    var mostrarDialogoEditar by remember { mutableStateOf(false) }
+    var modoEdicion by remember { mutableStateOf(false) }
 
-    // Snackbar y su alcance de corrutina
+    // Estado de edición
+    var textoEditado by remember { mutableStateOf("") }
+    var estadoEditado by remember { mutableStateOf(EstadoAnimo.obtenerLista().first()) }
+    var imagenEditada by remember { mutableStateOf<Uri?>(null) }
+
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        imagenEditada = uri
+    }
+
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
-    // Entradas desde ViewModel y filtro por fecha
     val entradas by viewModel.entradas.collectAsState()
     val entradaFiltrada = entradas.find { it.fecha == fechaSeleccionada }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -61,7 +70,6 @@ fun HistorialScreen(navController: NavHostController, viewModel: EntradaViewMode
                 Text("Historial", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Selector de fecha con DatePickerDialog
                 OutlinedTextField(
                     value = fechaSeleccionada,
                     onValueChange = {},
@@ -73,9 +81,10 @@ fun HistorialScreen(navController: NavHostController, viewModel: EntradaViewMode
                             DatePickerDialog(
                                 context,
                                 { _, year, month, day ->
-                                    val mesFormateado = (month + 1).toString().padStart(2, '0')
-                                    val diaFormateado = day.toString().padStart(2, '0')
-                                    fechaSeleccionada = "$year-$mesFormateado-$diaFormateado"
+                                    val mes = (month + 1).toString().padStart(2, '0')
+                                    val dia = day.toString().padStart(2, '0')
+                                    fechaSeleccionada = "$year-$mes-$dia"
+                                    modoEdicion = false
                                 },
                                 calendario.get(Calendar.YEAR),
                                 calendario.get(Calendar.MONTH),
@@ -88,75 +97,136 @@ fun HistorialScreen(navController: NavHostController, viewModel: EntradaViewMode
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
+
                 Text("Entrada del día:", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 if (entradaFiltrada != null) {
-                    // Muestra la entrada de texto
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(4.dp)
-                    ) {
-                        Text(
-                            text = entradaFiltrada.texto,
-                            fontSize = 14.sp,
-                            modifier = Modifier.padding(12.dp)
+                    if (modoEdicion) {
+                        // Campo de texto editable
+                        OutlinedTextField(
+                            value = textoEditado,
+                            onValueChange = { textoEditado = it },
+                            label = { Text("Resumen del día") },
+                            modifier = Modifier.fillMaxWidth()
                         )
-                    }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                    // Estado de ánimo
-                    Text(
-                        text = "Estado de ánimo: ${entradaFiltrada.estadoAnimo}",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Imagen del día (si existe)
-                    entradaFiltrada.imagenUri?.let { uri ->
-                        Image(
-                            painter = rememberAsyncImagePainter(uri),
-                            contentDescription = "Imagen del día",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(180.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Botones de acción
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        Button(onClick = { /* Acción de edición futura */ }) {
-                            Text("Editar")
+                        Text("Estado de ánimo:")
+                        var expanded by remember { mutableStateOf(false) }
+                        Box {
+                            OutlinedButton(onClick = { expanded = true }) {
+                                Text(estadoEditado.nombre)
+                            }
+                            DropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false }
+                            ) {
+                                EstadoAnimo.obtenerLista().forEach {
+                                    DropdownMenuItem(
+                                        text = { Text(it.nombre) },
+                                        onClick = {
+                                            estadoEditado = it
+                                            expanded = false
+                                        }
+                                    )
+                                }
+                            }
                         }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Imagen editable
+                        Button(onClick = { launcher.launch("image/*") }, modifier = Modifier.fillMaxWidth()) {
+                            Text("Seleccionar imagen")
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        imagenEditada?.let {
+                            Image(
+                                painter = rememberAsyncImagePainter(it),
+                                contentDescription = "Imagen seleccionada",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(180.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
                         Button(
                             onClick = {
-                                mostrarDialogoConfirmacion = true
+                                val entradaActualizada = entradaFiltrada.copy(
+                                    texto = textoEditado,
+                                    estadoAnimo = estadoEditado.nombre,
+                                    imagenUri = imagenEditada?.toString()
+                                )
+                                viewModel.editarEntrada(entradaActualizada)
+                                modoEdicion = false
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar("Entrada actualizada correctamente")
+                                }
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Eliminar", color = MaterialTheme.colorScheme.onError)
+                            Text("Actualizar")
+                        }
+                    } else {
+                        // Vista normal
+                        Card(modifier = Modifier.fillMaxWidth().padding(4.dp)) {
+                            Text(
+                                text = entradaFiltrada.texto,
+                                fontSize = 14.sp,
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text("Estado de ánimo: ${entradaFiltrada.estadoAnimo}", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        entradaFiltrada.imagenUri?.let {
+                            Image(
+                                painter = rememberAsyncImagePainter(it),
+                                contentDescription = "Imagen del día",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(180.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            Button(onClick = { mostrarDialogoEditar = true }) {
+                                Text("Editar")
+                            }
+                            Button(
+                                onClick = { mostrarDialogoEliminar = true },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                            ) {
+                                Text("Eliminar", color = MaterialTheme.colorScheme.onError)
+                            }
                         }
                     }
 
-                    // Diálogo de confirmación para eliminar entrada
-                    if (mostrarDialogoConfirmacion) {
+                    // Confirmación de eliminar
+                    if (mostrarDialogoEliminar) {
                         AlertDialog(
-                            onDismissRequest = { mostrarDialogoConfirmacion = false },
+                            onDismissRequest = { mostrarDialogoEliminar = false },
                             title = { Text("¿Eliminar entrada?") },
                             text = { Text("¿Estás segura de que querés eliminar esta entrada? Esta acción no se puede deshacer.") },
                             confirmButton = {
                                 TextButton(onClick = {
                                     viewModel.eliminarEntrada(entradaFiltrada.fecha)
-                                    mostrarDialogoConfirmacion = false
+                                    mostrarDialogoEliminar = false
                                     coroutineScope.launch {
                                         snackbarHostState.showSnackbar("Entrada eliminada correctamente")
                                     }
@@ -165,19 +235,42 @@ fun HistorialScreen(navController: NavHostController, viewModel: EntradaViewMode
                                 }
                             },
                             dismissButton = {
-                                TextButton(onClick = { mostrarDialogoConfirmacion = false }) {
+                                TextButton(onClick = { mostrarDialogoEliminar = false }) {
                                     Text("Cancelar")
                                 }
                             }
                         )
                     }
 
+                    // Confirmación de editar
+                    if (mostrarDialogoEditar) {
+                        AlertDialog(
+                            onDismissRequest = { mostrarDialogoEditar = false },
+                            title = { Text("¿Editar entrada?") },
+                            text = { Text("¿Querés editar esta entrada para agregar o modificar información?") },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    mostrarDialogoEditar = false
+                                    modoEdicion = true
+                                    textoEditado = entradaFiltrada.texto
+                                    estadoEditado = EstadoAnimo.obtenerLista().find { it.nombre == entradaFiltrada.estadoAnimo } ?: EstadoAnimo.obtenerLista().first()
+                                    imagenEditada = entradaFiltrada.imagenUri?.let { Uri.parse(it) }
+                                }) {
+                                    Text("Editar")
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { mostrarDialogoEditar = false }) {
+                                    Text("Cancelar")
+                                }
+                            }
+                        )
+                    }
                 } else {
                     Text("No hay ninguna entrada para esta fecha.")
                 }
             }
 
-            // Menú inferior reutilizable
             MenuInferior(navController)
         }
     }

@@ -148,15 +148,17 @@ fun EntradaScreen(
             Button(
                 onClick = {
                     focusManager.clearFocus() // Cierra el teclado
-                    //val usuarioEmail = authViewModel.usuario.value?.email ?: "usuario"
+                    val usuarioEmail = authViewModel.usuario.value?.email ?: "usuario"
+                    val fecha = LocalDate.now().toString()
                     val entrada = EntradaDiaria(
-                        fecha = fecha.toString(),
+                        fecha = fecha,
                         texto = entradaTexto,
                         estadoAnimo = estadoSeleccionado.nombre,
                         imagenUri = imagenUri?.toString()
                     )
                     viewModel.guardarEntrada(entrada)
                     Log.d("GuardarEntrada", "Entrada guardada: $entrada")
+                    Log.d("UsuarioActual", "Correo: ${authViewModel.usuario.value?.email}")
                 },
                 modifier = Modifier
                     .fillMaxWidth()
