@@ -15,7 +15,11 @@ class EntradaRepository {
         try {
             val idFecha = entrada.fecha  // Ejemplo: "2025-04-22"
             val ref = db.collection("entradas").document(idFecha)
-            val entradaConId = entrada.copy(id = idFecha)
+            val entradaConId = entrada
+            db.collection("entradas")
+                .document(entrada.fecha) // se usa la fecha como ID del documento
+                .set(entradaConId)
+                .await()
             ref.set(entradaConId).await()  // set() sobrescribe si ya existe
 
         } catch (e: Exception) {

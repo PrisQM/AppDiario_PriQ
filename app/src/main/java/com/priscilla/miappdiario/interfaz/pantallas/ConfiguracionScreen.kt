@@ -5,15 +5,21 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.priscilla.miappdiario.interfaz.componentes.MenuInferior
+import com.priscilla.miappdiario.navigation.AppScreens
+import com.priscilla.miappdiario.viewmodel.AuthViewModel
 
 @Composable
-fun ConfiguracionScreen(navController: NavHostController) {
+fun ConfiguracionScreen(
+    navController: NavHostController,
+    viewModel: AuthViewModel = viewModel() // ViewModel para manejar sesión
+) {
     var hora by remember { mutableStateOf(20) }
     var minutos by remember { mutableStateOf(0) }
 
@@ -57,8 +63,14 @@ fun ConfiguracionScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(40.dp))
 
+            // Botón para cerrar sesión y navegar al login limpiando el historial
             Button(
-                onClick = { /* acción de cerrar sesión */ },
+                onClick = {
+                    viewModel.logout() // Llama a signOut de Firebase
+                    navController.navigate(AppScreens.Login.route) {
+                        popUpTo(AppScreens.Entrada.route) { inclusive = true } // Limpia el backstack
+                    }
+                },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFADCBE3)),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -66,7 +78,7 @@ fun ConfiguracionScreen(navController: NavHostController) {
             }
         }
 
+        // Menú inferior común
         MenuInferior(navController)
-
     }
 }
