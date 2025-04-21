@@ -18,7 +18,6 @@ class EntradaRepository {
             val entradaConId = entrada.copy(id = idFecha)
             ref.set(entradaConId).await()  // set() sobrescribe si ya existe
 
-            Log.d("PRUEBA_LOG", "Hola desde Log.d()")
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -33,6 +32,16 @@ class EntradaRepository {
         } catch (e: Exception) {
             e.printStackTrace()
             emptyList()
+        }
+    }
+
+    //obtiene las entradas por fecha
+    suspend fun obtenerEntradaPorFecha(fecha: String): EntradaDiaria? {
+        return try {
+            val doc = db.collection("entradas").document(fecha).get().await()
+            doc.toObject(EntradaDiaria::class.java)
+        } catch (e: Exception) {
+            null
         }
     }
 

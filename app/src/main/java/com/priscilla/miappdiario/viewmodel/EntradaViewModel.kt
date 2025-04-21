@@ -12,9 +12,13 @@ class EntradaViewModel(
     private val repository: EntradaRepository = EntradaRepository()
 ) : ViewModel() {
 
-    // Flujo de estado para almacenar las entradas
+    // Flujo de estado para almacenar todas las entradas
     private val _entradas = MutableStateFlow<List<EntradaDiaria>>(emptyList())
     val entradas: StateFlow<List<EntradaDiaria>> get() = _entradas
+
+    // Flujo de estado para almacenar una entrada específica por fecha
+    private val _entradaPorFecha = MutableStateFlow<EntradaDiaria?>(null)
+    val entradaPorFecha: StateFlow<EntradaDiaria?> get() = _entradaPorFecha
 
     // Flujo de estado para mostrar errores o mensajes
     private val _mensaje = MutableStateFlow<String?>(null)
@@ -31,13 +35,25 @@ class EntradaViewModel(
         }
     }
 
+    // Obtener una entrada específica por su fecha (formato yyyy-MM-dd)
+    fun cargarEntradaPorFecha(fecha: String) {
+        viewModelScope.launch {
+            try {
+                val entrada = repository.obtenerEntradaPorFecha(fecha)
+                _entradaPorFecha.value = entrada
+            } catch (e: Exception) {
+                _mensaje.value = "Error al buscar entrada: ${e.message}"
+            }
+        }
+    }
+
     // Guardar una nueva entrada en Firestore
     fun guardarEntrada(entrada: EntradaDiaria) {
         viewModelScope.launch {
             try {
                 repository.guardarEntrada(entrada)
                 _mensaje.value = "Entrada guardada exitosamente"
-                obtenerEntradas() // Refrescar
+                obtenerEntradas() // Refrescar lista
             } catch (e: Exception) {
                 _mensaje.value = "Error al guardar entrada: ${e.message}"
             }
@@ -57,7 +73,7 @@ class EntradaViewModel(
         }
     }
 
-    // Eliminar una entrada desde Firestore por su ID
+    // Eliminar una entrada desde Firestore por su ID (fecha)
     fun eliminarEntrada(id: String) {
         viewModelScope.launch {
             try {
@@ -70,7 +86,7 @@ class EntradaViewModel(
         }
     }
 
-    // Limpiar el mensaje mostrado
+    // Limpiar el mensaje mostrado en pantalla
     fun limpiarMensaje() {
         _mensaje.value = null
     }

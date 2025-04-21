@@ -1,7 +1,12 @@
 package com.priscilla.miappdiario.interfaz.pantallas
 
 import android.os.Build
+import android.util.Log
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.BasicTextField
@@ -13,46 +18,45 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import coil.compose.rememberAsyncImagePainter
+import com.priscilla.miappdiario.interfaz.componentes.MenuInferior
 import com.priscilla.miappdiario.interfaz.tema.ColorBotonPrimario
 import com.priscilla.miappdiario.interfaz.tema.ColorTexto
+import com.priscilla.miappdiario.model.EntradaDiaria
 import com.priscilla.miappdiario.model.EstadoAnimo
+import com.priscilla.miappdiario.viewmodel.AuthViewModel
+import com.priscilla.miappdiario.viewmodel.EntradaViewModel
 import java.time.LocalDate
 import java.time.format.TextStyle as JavaTextStyle
 import java.util.*
-import com.priscilla.miappdiario.interfaz.componentes.MenuInferior
-
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-
-import coil.compose.rememberAsyncImagePainter
-import androidx.compose.foundation.Image
-
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.priscilla.miappdiario.viewmodel.EntradaViewModel
-import com.priscilla.miappdiario.model.EntradaDiaria
-
-import android.util.Log
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun EntradaScreen(navController: NavHostController) {
+fun EntradaScreen(
+    navController: NavHostController,
+    authViewModel: AuthViewModel = viewModel(),
+    viewModel: EntradaViewModel = viewModel()
+) {
+    // Variables para entrada de texto y estado de ánimo
     var entradaTexto by remember { mutableStateOf("") }
-    val fecha = LocalDate.now()
-    val diaSemana = fecha.dayOfWeek.getDisplayName(JavaTextStyle.FULL, Locale("es", "ES"))
-    val mes = fecha.month.getDisplayName(JavaTextStyle.FULL, Locale("es", "ES"))
-    val fechaFormateada = "${diaSemana.replaceFirstChar { it.uppercase() }}, ${fecha.dayOfMonth} de ${mes} del ${fecha.year}"
+    var estadoSeleccionado by remember { mutableStateOf(EstadoAnimo.obtenerLista().first()) }
+    var expanded by remember { mutableStateOf(false) }
 
+    // Imagen seleccionada
     var imagenUri by remember { mutableStateOf<Uri?>(null) }
 
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
+    // Launcher para seleccionar imagen desde la galería
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         imagenUri = uri
     }
 
-    val viewModel: EntradaViewModel = viewModel()
+    // Fecha actual formateada
+    val fecha = LocalDate.now()
+    val diaSemana = fecha.dayOfWeek.getDisplayName(JavaTextStyle.FULL, Locale("es", "ES"))
+    val mes = fecha.month.getDisplayName(JavaTextStyle.FULL, Locale("es", "ES"))
+    val fechaFormateada = "${diaSemana.replaceFirstChar { it.uppercase() }}, ${fecha.dayOfMonth} de $mes del ${fecha.year}"
 
     Column(
         modifier = Modifier
@@ -61,28 +65,19 @@ fun EntradaScreen(navController: NavHostController) {
             .padding(14.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-
         Spacer(modifier = Modifier.height(70.dp))
 
-        //Label de Fecha
-        Text(
-            text = fechaFormateada,
-            style = MaterialTheme.typography.titleLarge,
-            color = ColorTexto
-        )
+        // Mostrar la fecha actual
+        Text(text = fechaFormateada, style = MaterialTheme.typography.titleLarge, color = ColorTexto)
 
         Spacer(modifier = Modifier.height(28.dp))
 
-        //Label de entrada
-        Text(
-            text = "Escribe sobre tu día...",
-            style = MaterialTheme.typography.bodyLarge,
-            color = ColorTexto
-        )
+        // Label de texto
+        Text(text = "Escribe sobre tu día...", style = MaterialTheme.typography.bodyLarge, color = ColorTexto)
 
         Spacer(modifier = Modifier.height(2.dp))
 
-        //Espacio para la entrada
+        // Campo de entrada de texto
         BasicTextField(
             value = entradaTexto,
             onValueChange = { entradaTexto = it },
@@ -96,26 +91,21 @@ fun EntradaScreen(navController: NavHostController) {
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        var estadoSeleccionado by remember { mutableStateOf(EstadoAnimo.obtenerLista().first()) }
-        var expanded by remember { mutableStateOf(false) }
-
-        //Label de estado de ánimo
+        // Label de estado de ánimo
         Text("¿Cómo te sientes hoy?", style = MaterialTheme.typography.bodyMedium)
         Spacer(modifier = Modifier.height(4.dp))
 
-        //Dropdown de estado de ánimo
+        // Dropdown para seleccionar emoción
         Box(modifier = Modifier.fillMaxWidth()) {
             OutlinedButton(onClick = { expanded = true }) {
                 Text(estadoSeleccionado.nombre)
             }
 
-            val listaEstados = EstadoAnimo.obtenerLista()
-
             DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
-                listaEstados.forEach { estado ->
+                EstadoAnimo.obtenerLista().forEach { estado ->
                     DropdownMenuItem(
                         text = { Text(estado.nombre) },
                         onClick = {
@@ -129,16 +119,9 @@ fun EntradaScreen(navController: NavHostController) {
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        //Imagen seleccionada
+        // Selector de imagen y vista previa
         if (imagenUri != null) {
-
-            //Botón de seleccionar imagen
-            Button(
-                onClick = { launcher.launch("image/*") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            ) {
+            Button(onClick = { launcher.launch("image/*") }, modifier = Modifier.fillMaxWidth()) {
                 Text("Cambiar Imagen")
             }
 
@@ -152,13 +135,7 @@ fun EntradaScreen(navController: NavHostController) {
                     .height(180.dp)
             )
         } else {
-            //Botón de seleccionar imagen
-            Button(
-                onClick = { launcher.launch("image/*") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            ) {
+            Button(onClick = { launcher.launch("image/*") }, modifier = Modifier.fillMaxWidth()) {
                 Text("Seleccionar Imagen")
             }
 
@@ -169,9 +146,21 @@ fun EntradaScreen(navController: NavHostController) {
 
         Spacer(modifier = Modifier.height(30.dp))
 
-        //Botón de guardar
+        // Botón para guardar entrada
         Button(
-            onClick = { /* Acción de guardar */ },
+            onClick = {
+                val usuarioEmail = authViewModel.usuario.value?.email ?: "usuario"
+                val entrada = EntradaDiaria(
+                    id = fecha.toString(),
+                    nombre = usuarioEmail,
+                    texto = entradaTexto,
+                    fecha = fecha.toString(),
+                    estadoAnimo = estadoSeleccionado.nombre,
+                    imagenUri = imagenUri?.toString()
+                )
+                viewModel.guardarEntrada(entrada)
+                Log.d("GuardarEntrada", "Entrada guardada: $entrada")
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp),
@@ -182,8 +171,7 @@ fun EntradaScreen(navController: NavHostController) {
 
         Spacer(modifier = Modifier.height(30.dp))
 
-        //menú inferior
+        // Menú inferior con navegación
         MenuInferior(navController)
-
     }
 }
