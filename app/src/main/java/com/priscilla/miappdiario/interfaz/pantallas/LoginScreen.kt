@@ -1,28 +1,39 @@
 package com.priscilla.miappdiario.interfaz.pantallas
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import com.priscilla.miappdiario.interfaz.tema.MiAppDiarioTheme
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.priscilla.miappdiario.navigation.AppScreens
+import com.priscilla.miappdiario.viewmodel.AuthViewModel
 
 @Composable
-fun LoginScreen(navController: NavHostController) {
+fun LoginScreen(
+    navController: NavHostController,
+    viewModel: AuthViewModel = viewModel()
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    val usuario by viewModel.usuario.collectAsState()
+    val error by viewModel.error.collectAsState()
+
+    // Navega automáticamente si el usuario ha iniciado sesión
+    LaunchedEffect(usuario) {
+        if (usuario != null) {
+            navController.navigate(AppScreens.Entrada.route) {
+                popUpTo(AppScreens.Login.route) { inclusive = true }
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -31,6 +42,15 @@ fun LoginScreen(navController: NavHostController) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        Text(
+            text = "Diario App",
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         Text("Iniciar Sesión", style = MaterialTheme.typography.headlineSmall)
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -56,12 +76,16 @@ fun LoginScreen(navController: NavHostController) {
 
         Button(
             onClick = {
-                // Solo navegación por ahora
-                navController.navigate(AppScreens.Entrada.route)
+                viewModel.login(email, password)
             },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Entrar")
+        }
+
+        if (error != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = error ?: "", color = Color.Red, fontSize = 14.sp)
         }
 
         Spacer(modifier = Modifier.height(16.dp))

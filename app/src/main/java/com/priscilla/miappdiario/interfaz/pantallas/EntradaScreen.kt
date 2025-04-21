@@ -22,6 +22,19 @@ import java.time.format.TextStyle as JavaTextStyle
 import java.util.*
 import com.priscilla.miappdiario.interfaz.componentes.MenuInferior
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+
+import coil.compose.rememberAsyncImagePainter
+import androidx.compose.foundation.Image
+
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.priscilla.miappdiario.viewmodel.EntradaViewModel
+import com.priscilla.miappdiario.model.EntradaDiaria
+
+import android.util.Log
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun EntradaScreen(navController: NavHostController) {
@@ -31,17 +44,27 @@ fun EntradaScreen(navController: NavHostController) {
     val mes = fecha.month.getDisplayName(JavaTextStyle.FULL, Locale("es", "ES"))
     val fechaFormateada = "${diaSemana.replaceFirstChar { it.uppercase() }}, ${fecha.dayOfMonth} de ${mes} del ${fecha.year}"
 
+    var imagenUri by remember { mutableStateOf<Uri?>(null) }
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        imagenUri = uri
+    }
+
+    val viewModel: EntradaViewModel = viewModel()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Top
+            .padding(14.dp),
+        verticalArrangement = Arrangement.SpaceBetween
     ) {
 
         Spacer(modifier = Modifier.height(70.dp))
 
-        //Fecha
+        //Label de Fecha
         Text(
             text = fechaFormateada,
             style = MaterialTheme.typography.titleLarge,
@@ -50,6 +73,7 @@ fun EntradaScreen(navController: NavHostController) {
 
         Spacer(modifier = Modifier.height(28.dp))
 
+        //Label de entrada
         Text(
             text = "Escribe sobre tu día...",
             style = MaterialTheme.typography.bodyLarge,
@@ -58,25 +82,28 @@ fun EntradaScreen(navController: NavHostController) {
 
         Spacer(modifier = Modifier.height(2.dp))
 
+        //Espacio para la entrada
         BasicTextField(
             value = entradaTexto,
             onValueChange = { entradaTexto = it },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(150.dp)
+                .height(120.dp)
                 .background(Color.White, shape = MaterialTheme.shapes.medium)
                 .padding(12.dp),
             textStyle = TextStyle(fontSize = 16.sp, color = Color.Black)
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
         var estadoSeleccionado by remember { mutableStateOf(EstadoAnimo.obtenerLista().first()) }
         var expanded by remember { mutableStateOf(false) }
 
+        //Label de estado de ánimo
         Text("¿Cómo te sientes hoy?", style = MaterialTheme.typography.bodyMedium)
         Spacer(modifier = Modifier.height(4.dp))
 
+        //Dropdown de estado de ánimo
         Box(modifier = Modifier.fillMaxWidth()) {
             OutlinedButton(onClick = { expanded = true }) {
                 Text(estadoSeleccionado.nombre)
@@ -100,8 +127,49 @@ fun EntradaScreen(navController: NavHostController) {
             }
         }
 
-        Spacer(modifier = Modifier.height(40.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
+        //Imagen seleccionada
+        if (imagenUri != null) {
+
+            //Botón de seleccionar imagen
+            Button(
+                onClick = { launcher.launch("image/*") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                Text("Cambiar Imagen")
+            }
+
+            Spacer(modifier = Modifier.height(15.dp))
+
+            Image(
+                painter = rememberAsyncImagePainter(imagenUri),
+                contentDescription = "Foto seleccionada",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+            )
+        } else {
+            //Botón de seleccionar imagen
+            Button(
+                onClick = { launcher.launch("image/*") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                Text("Seleccionar Imagen")
+            }
+
+            Spacer(modifier = Modifier.height(15.dp))
+
+            Text("No has seleccionado ninguna imagen aún")
+        }
+
+        Spacer(modifier = Modifier.height(30.dp))
+
+        //Botón de guardar
         Button(
             onClick = { /* Acción de guardar */ },
             modifier = Modifier
@@ -112,8 +180,9 @@ fun EntradaScreen(navController: NavHostController) {
             Text("Guardar", color = Color.White)
         }
 
-        Spacer(modifier = Modifier.height(330.dp))
+        Spacer(modifier = Modifier.height(30.dp))
 
+        //menú inferior
         MenuInferior(navController)
 
     }

@@ -5,17 +5,34 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.priscilla.miappdiario.navigation.AppScreens
+import com.priscilla.miappdiario.viewmodel.AuthViewModel
+import androidx.compose.ui.graphics.Color
 
 @Composable
-fun SigninScreen(navController: NavHostController) {
+fun SigninScreen(
+    navController: NavHostController,
+    viewModel: AuthViewModel = viewModel()
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    val usuario by viewModel.usuario.collectAsState()
+    val error by viewModel.error.collectAsState()
+
+    // Si ya se registró exitosamente, navega a EntradaScreen
+    LaunchedEffect(usuario) {
+        if (usuario != null) {
+            navController.navigate(AppScreens.Entrada.route) {
+                popUpTo(AppScreens.Signin.route) { inclusive = true }
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -49,12 +66,16 @@ fun SigninScreen(navController: NavHostController) {
 
         Button(
             onClick = {
-                // Futuro: registrar usuario
-                navController.navigate(AppScreens.Entrada.route)
+                viewModel.register(email, password)
             },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Registrarse")
+        }
+
+        if (error != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = error ?: "", color = Color.Red, fontSize = 14.sp)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
